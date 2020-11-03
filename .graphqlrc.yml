@@ -1,0 +1,38 @@
+schema: ${SCHEMA_PATH}
+documents: src/**/*.graphql
+extensions:
+  # Конфигурация для vscode-плагина https://github.com/graphql/vscode-graphql
+  endpoints:
+    dev: http://localhost:9002/graphql
+    staging: http://localhost:9002/graphql
+
+  # Конфигурация для graphql-code-generator https://graphql-code-generator.com/docs/getting-started/index
+  codegen:
+    generates:
+      src/__generated__/index.ts:
+        - typescript
+
+      src/:
+        preset: near-operation-file # https://graphql-code-generator.com/docs/presets/near-operation-file
+        presetConfig:
+          folder: __generated__
+          extension: .tsx
+          baseTypesPath: __generated__/index.ts
+        plugins:
+          - typescript-operations #https://graphql-code-generator.com/docs/plugins/typescript-operations
+          - typescript-react-apollo # https://graphql-code-generator.com/docs/plugins/typescript-react-apollo
+        config:
+          apolloReactHooksImportFrom: 'src/apollo/hooks'
+          documentMode: 'documentNodeImportFragments'
+          namingConvention: keep
+          nonOptionalTypename: false
+          dedupeOperationSuffix: true
+          omitOperationSuffix: true
+          withComponent: false
+          withHooks: true
+          withHOC: false
+          reactApolloVersion: 3
+
+      ./schema.json:
+        plugins:
+          - introspection

@@ -1,0 +1,10 @@
+{
+  "name": "CUSTOM_NAME Schema",
+  "schemaPath": "schema.graphql",
+  "extensions": {
+    "endpoints": {
+      "dev": "http://localhost:9002/graphql",
+      "staging": "http://localhost:9002/graphql"
+    }
+  }
+}

@@ -1,0 +1,172 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@3.4.2
+
+executors:
+  staging-executor:
+    working_directory: ~/app
+    docker:
+      - image: cypress/included:5.3.0
+    environment:
+      TZ: 'Asia/Yekaterinburg'
+
+  release-executor:
+    working_directory: ~/app
+    docker:
+      - image: cypress/browsers:chrome69
+    environment:
+      TZ: 'Asia/Yekaterinburg'
+
+commands:
+  setup_npm:
+    description: 'Устанавливаем npm зависимости'
+    steps:
+      - run:
+          name: Install npm dependencies
+          command: npm ci
+
+  cache_dependencies:
+    description: 'Сохраняем кэш зависимостей чтобы использовать их дальше'
+    steps:
+      - save_cache:
+          paths:
+            - node_modules
+            - ~/.npm
+            - ~/.cache
+          key: v1-dependencies-{{ checksum "package.json" }}
+
+  restore_dependencies:
+    description: 'Восстанавливаем кешированные зависимости и используем их'
+    steps:
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            - v1-dependencies-
+
+  generate_graphql_hooks_and_types_and_schema:
+    description: 'Генерируем типы, apollo хуки и схему'
+    steps:
+      - run: npm run graphql:codegen
+
+jobs:
+  deploy_release:
+    parameters:
+      domain:
+        type: string
+      environment:
+        type: enum
+        enum: ['release']
+
+    executor: release-executor
+    steps:
+      - checkout
+      - restore_dependencies
+      - setup_npm
+      - cache_dependencies
+      # https://circleci.com/docs/2.0/add-ssh-key/
+      - add_ssh_keys
+      - generate_graphql_hooks_and_types_and_schema
+      - run: 'npm run build:<< parameters.environment >>'
+      - run: '.circleci/deploy.sh << parameters.environment >>'
+      - slack/notify:
+          message: 'Выгружено на << parameters.domain >>'
+          color: '#42e2f4'
+
+  deploy_staging:
+    parameters:
+      domain:
+        type: string
+      environment:
+        type: enum
+        enum: ['staging', feature]
+    executor: staging-executor
+    steps:
+      - checkout
+      - restore_dependencies
+      - setup_npm
+      - cache_dependencies
+      # https://circleci.com/docs/2.0/add-ssh-key/
+      - add_ssh_keys
+      - generate_graphql_hooks_and_types_and_schema
+      - run: 'npm run build:<< parameters.environment >>'
+      - run: '.circleci/deploy.sh << parameters.environment >>'
+      - slack/notify:
+          message: 'Выгружено на << parameters.domain >>'
+          color: '#42e2f4'
+
+  test:
+    parameters:
+      test_type:
+        type: enum
+        enum: ['e2e', 'unit']
+
+    executor: staging-executor
+    steps:
+      - checkout
+      - restore_dependencies
+      - setup_npm
+      - cache_dependencies
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - .cache/Cypress
+      - generate_graphql_hooks_and_types_and_schema
+      - run: 'npm run test:<< parameters.test_type >>:ci'
+
+      - store_test_results:
+          path: test-reports
+
+      - store_artifacts:
+          path: test-reports
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - test:
+          name: test-unit
+          test_type: unit
+          filters:
+            branches:
+              ignore:
+                - release
+                - master
+
+      - test:
+          name: test-e2e
+          test_type: e2e
+          filters:
+            branches:
+              ignore:
+                - release
+
+      - deploy_staging:
+          name: deploy-staging
+          domain: CUSTOM_NAME
+          environment: staging
+          filters:
+            branches:
+              only:
+                - staging
+
+      - deploy_staging:
+          name: deploy-feature
+          # Достаем переменную CIRCLE_BRANCHE из deploy.sh
+          domain: CUSTOM_NAME
+          environment: feature
+          filters:
+            branches:
+              ignore:
+                - staging
+                - master
+                - release
+
+      - deploy_release:
+          name: deploy-release
+          domain: CUSTOM_NAME
+          environment: release
+          filters:
+            branches:
+              only:
+                - release

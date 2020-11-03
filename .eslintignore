@@ -1,0 +1,14 @@
+build/*
+public/*
+src/react-app-env.d.ts
+src/serviceWorker.ts
+apollo.config.ts
+jest.config.js
+setupTests.ts
+e2e/*
+
+# generated
+**/__generated__/
+src/__generated__/index.ts
+schema.graphql
+schema.json

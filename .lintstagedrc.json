@@ -1,0 +1,6 @@
+{
+  "*.{ts,tsx, graphql}": [
+    "npm run lint:pretify",
+    "npm run lint:lint"
+  ]
+}
