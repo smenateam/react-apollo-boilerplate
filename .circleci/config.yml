@@ -26,24 +26,6 @@ commands:
           name: Install npm dependencies
           command: npm ci
 
-  cache_dependencies:
-    description: 'Сохраняем кэш зависимостей чтобы использовать их дальше'
-    steps:
-      - save_cache:
-          paths:
-            - node_modules
-            - ~/.npm
-            - ~/.cache
-          key: v1-dependencies-{{ checksum "package.json" }}
-
-  restore_dependencies:
-    description: 'Восстанавливаем кешированные зависимости и используем их'
-    steps:
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            - v1-dependencies-
-
   generate_graphql_hooks_and_types_and_schema:
     description: 'Генерируем типы, apollo хуки и схему'
     steps:
@@ -61,9 +43,7 @@ jobs:
     executor: release-executor
     steps:
       - checkout
-      - restore_dependencies
       - setup_npm
-      - cache_dependencies
       # https://circleci.com/docs/2.0/add-ssh-key/
       - add_ssh_keys
       - generate_graphql_hooks_and_types_and_schema
@@ -83,9 +63,7 @@ jobs:
     executor: staging-executor
     steps:
       - checkout
-      - restore_dependencies
       - setup_npm
-      - cache_dependencies
       # https://circleci.com/docs/2.0/add-ssh-key/
       - add_ssh_keys
       - generate_graphql_hooks_and_types_and_schema
@@ -104,9 +82,7 @@ jobs:
     executor: staging-executor
     steps:
       - checkout
-      - restore_dependencies
       - setup_npm
-      - cache_dependencies
       - persist_to_workspace:
           root: ~/
           paths:
