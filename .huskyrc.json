@@ -2,7 +2,5 @@
   "hooks": {
     "pre-commit": "lint-staged",
     "commit-msg": "npm run lint:commit",
-    "post-checkout": "npm run sync",
-    "post-merge": "npm run sync"
   }
 }
