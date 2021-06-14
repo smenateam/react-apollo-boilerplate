@@ -1,8 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BusinessLogicError = any
+// TODO: Добавить типы ошибок доступа ( AuthenticationError | AccessDeniedError )
+type BusinessLogicError = null | { message: string, __typename: string }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getErrorFromResponse = (response: any): BusinessLogicError => {
+export const getErrorFromResponse = (response: unknown): BusinessLogicError => {
   /**
    * Получает каждый ответ с сервера
    * смотрит есть ли там поле error

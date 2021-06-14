@@ -1,7 +1,7 @@
 import * as Apollo from '@apollo/client'
 import { ApolloError } from '@apollo/client'
 import { redirectHandler } from 'src/services/redirectWhenError'
-import { sentryCaptureError } from 'src/vendor/sentry/captureErrors'
+import { sentryCaptureError } from 'src/sentry/captureErrors'
 import {
   QueryHookOptions,
   MutationHookOptions,

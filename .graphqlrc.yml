@@ -1,4 +1,8 @@
 schema: ${SCHEMA_PATH}
+# РАСКОММЕНТИРУЙ ЕСТЬ НА БЕКЕ ЕСТЬ ГЕНЕРАЦИЯ СХЕМ ПОД РАЗНЫЕ GIT ВЕТКИ
+#schema:
+#  - github:smenateam/farfor#${BRANCH}:graphql-schema/CUSTOM_NAME.schema.graphql:
+#      token: ${PERSONAL_ACCESS_TOKEN
 documents: src/**/*.graphql
 extensions:
   # Конфигурация для vscode-плагина https://github.com/graphql/vscode-graphql

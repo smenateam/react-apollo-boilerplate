@@ -7,66 +7,46 @@ executors:
   staging-executor:
     working_directory: ~/app
     docker:
-      - image: cypress/included:5.3.0
+      - image: cypress/included:6.1.0
+    environment:
+      TZ: 'Asia/Yekaterinburg'
+
+  feature-executor:
+    working_directory: ~/app
+    docker:
+      - image: cypress/included:6.1.0
+    environment:
+      TZ: 'Asia/Yekaterinburg'
+
+  master-executor:
+    working_directory: ~/app
+    docker:
+      - image: cypress/included:6.1.0
     environment:
       TZ: 'Asia/Yekaterinburg'
 
   release-executor:
     working_directory: ~/app
     docker:
-      - image: cypress/browsers:chrome69
+      - image: circleci/node:14.15.0
     environment:
       TZ: 'Asia/Yekaterinburg'
 
-commands:
-  setup_npm:
-    description: 'Устанавливаем npm зависимости'
-    steps:
-      - run:
-          name: Install npm dependencies
-          command: npm ci
-
-  generate_graphql_hooks_and_types_and_schema:
-    description: 'Генерируем типы, apollo хуки и схему'
-    steps:
-      - run: npm run graphql:codegen
-
 jobs:
-  deploy_release:
+  deploy:
     parameters:
       domain:
         type: string
       environment:
         type: enum
-        enum: ['release']
+        enum: ['staging', 'feature', 'master', 'release']
 
-    executor: release-executor
+    executor: '<< parameters.environment >>-executor'
     steps:
       - checkout
-      - setup_npm
-      # https://circleci.com/docs/2.0/add-ssh-key/
       - add_ssh_keys
-      - generate_graphql_hooks_and_types_and_schema
-      - run: 'npm run build:<< parameters.environment >>'
-      - run: '.circleci/deploy.sh << parameters.environment >>'
-      - slack/notify:
-          message: 'Выгружено на << parameters.domain >>'
-          color: '#42e2f4'
-
-  deploy_staging:
-    parameters:
-      domain:
-        type: string
-      environment:
-        type: enum
-        enum: ['staging', feature]
-    executor: staging-executor
-    steps:
-      - checkout
-      - setup_npm
-      # https://circleci.com/docs/2.0/add-ssh-key/
-      - add_ssh_keys
-      - generate_graphql_hooks_and_types_and_schema
+      - run: 'npm ci'
+      - run: 'npm run graphql:codegen'
       - run: 'npm run build:<< parameters.environment >>'
       - run: '.circleci/deploy.sh << parameters.environment >>'
       - slack/notify:
@@ -82,12 +62,12 @@ jobs:
     executor: staging-executor
     steps:
       - checkout
-      - setup_npm
+      - run: 'npm ci'
       - persist_to_workspace:
           root: ~/
           paths:
             - .cache/Cypress
-      - generate_graphql_hooks_and_types_and_schema
+      - run: 'npm run graphql:codegen'
       - run: 'npm run test:<< parameters.test_type >>:ci'
 
       - store_test_results:
@@ -107,7 +87,6 @@ workflows:
             branches:
               ignore:
                 - release
-                - master
 
       - test:
           name: test-e2e
@@ -117,7 +96,7 @@ workflows:
               ignore:
                 - release
 
-      - deploy_staging:
+      - deploy:
           name: deploy-staging
           domain: CUSTOM_NAME
           environment: staging
@@ -126,9 +105,17 @@ workflows:
               only:
                 - staging
 
-      - deploy_staging:
+      - deploy:
+          name: deploy-master
+          domain: CUSTOM_NAME
+          environment: master
+          filters:
+            branches:
+              only:
+                - master
+
+      - deploy:
           name: deploy-feature
-          # Достаем переменную CIRCLE_BRANCHE из deploy.sh
           domain: CUSTOM_NAME
           environment: feature
           filters:
@@ -138,7 +125,7 @@ workflows:
                 - master
                 - release
 
-      - deploy_release:
+      - deploy:
           name: deploy-release
           domain: CUSTOM_NAME
           environment: release
