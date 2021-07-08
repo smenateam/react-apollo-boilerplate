@@ -1,5 +1,5 @@
 // TODO: Добавить типы ошибок доступа ( AuthenticationError | AccessDeniedError )
-type BusinessLogicError = null | { message: string, __typename: string }
+type BusinessLogicError = null | { message: string; __typename: string }
 
 export const getErrorFromResponse = (response: unknown): BusinessLogicError => {
   /**
