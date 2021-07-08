@@ -26,7 +26,8 @@
     "lint:commit": "commitlint -E HUSKY_GIT_PARAMS",
     "version:sync": "git fetch --tags",
     "packages:purge": "rm -rf node_modules",
-    "packages:restore": "npm run packages:purge && npm i"
+    "packages:restore": "npm run packages:purge && npm i",
+    "prepare": "husky install"
   },
   "eslintConfig": {
     "extends": "react-app"
