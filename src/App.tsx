@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 
 import Main from 'src/components/Main'
 
-const App = (): ReactElement => (
+const App = (): ReactElement => {
+  (
   <Router>
     <Route>
       <Switch>
